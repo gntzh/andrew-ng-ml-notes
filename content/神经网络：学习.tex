@@ -1,0 +1,276 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{神经网络：学习}
+
+\section{代价函数}
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=3cm,
+        on grid,
+        ->,
+    ]
+        \foreach \i in {1,...,5}{
+            \node[neuron] (L2-\i) at (0, -\i) {};% Layer 2
+            \node[neuron, right=of L2-\i] (L3-\i) {};% Layer 3
+        }
+        \foreach \v[count=\i from 1] in {2,3,4}{
+            \node[neuron=blue, left=of L2-\v] (L1-\i) {}; % Layer 1
+            \foreach \j in {1,...,5}
+                \draw (L1-\i.east) -> (L2-\j.west);
+        }
+        \foreach \i in {1,...,4}{
+            \node[neuron, right=of L3-\i, yshift=-0.5cm] (L4-\i) {};% Layer 4
+            \foreach \j in {1,...,5}
+                \draw (L3-\j .east) -> (L4-\i .west);
+        }
+        \foreach \i in {1,...,5}
+            \foreach \j in {1,...,5}
+                \draw (L2-\i .east) -> (L3-\j .west);
+        \node[below=0.3em of L2-5.south] (L2-text) {Layer 2};
+        \node[below=0.3em of L3-5.south] (L3-text) {Layer 3};
+        \node[left=of L2-text] {Layer 1};
+        \node[right=of L3-text] {Layer 4};
+    \end{tikzpicture}
+    \caption{一个用于分类的4层神经网络（没有画出偏置单元）}\label{img:4层分类神经网络}
+\end{figure}
+\paragraph{符号}
+\begin{itemize}
+    \item \({(x^{(1)}, y^{(1)}), (x^{(2)}, y^{(2)}), ⋯, (x^{(m)}, y^{(m)})}\)表示m个样本。
+    \item \(L\)，神经网络层数，图中\(L=4\)。
+    \item \(s_l\)，第\(l\)层中神经元的数量（不含编制单元），图中\(s_1=3, s_L=4\)。
+    \item \(K\)，输出单元的个数，所以输出\(h_Θ(x), y\)是个\(K\)维向量，图中\(K=s_L=4\)。\\
+    二元分类\(K=1\)，多元分类\(K≥3\)。
+\end{itemize}
+逻辑回归问题中的代价函数是：\[
+    J(θ) = -\frac{1}{m}\sum\limits_{i=1}^{m}\bigg[y^{(i)}\log(h_θ(x^{(i)})) - (1-y^{(i)})\log(1- h_θ(x^{(i)}))\bigg]
+    + \frac{λ}{2m}\sum\limits_{j=1}^{n}θ_j^2
+\]
+神经网络的代价函数更加复杂：
+\begin{equation}
+    \begin{aligned}\label{eq:神经网络的代价函数}
+        J(Θ) = & -\frac{1}{m}\sum\limits_{i=1}^{m} \sum\limits_{k=1}^{k}\bigg[ {y_k}^{(i)} \log((h_Θ(x^{(i)}))_k) + ( 1 - y_k^{(i)} ) \log(1- (h_Θ(x^{(i)}))_k)\bigg] \\
+               & + \frac{\lambda}{2m} \sum\limits_{l=1}^{L-1} \sum\limits_{i=1}^{s_l} \sum\limits_{j=1}^{s_{l+1}} (Θ_{ji}^{(l)})^2
+    \end{aligned}
+\end{equation}
+因为有多个输出，用\((h_Θ(x^{(i)}))_k, y^{(i)}_k\)第\(i\)个的第\(k\)个假设、输出。因为每个激活单元都有权重（或者每个单元向下一层每个单元的映射都有权重），用\(Θ_{ji}^{(l)}\)表示第\(l\)层第\(i\)个单元映射到第\(j\)个激活单元的权重，所以正则项包含除偏置单元的权重外的所有权重。\\
+\\\begin{remark}
+    \(Θ\)下标可能用\(ij\)更好一些。
+\end{remark}
+
+
+\section{反向传播算法}
+% Back Propagation Algorithm
+神经网络要求的仍然是：
+\begin{itemize}
+    \item 代价：\(J(Θ)\)
+    \item 偏导数：\(\frac{∂}{∂Θ^{(l)}_{ij}}J(Θ)\)
+\end{itemize}
+\(J(Θ)\)相对易求，单偏导数需要采用一种反向传播算法，也就是首先计算最后一层的误差，然后再一层一层反向求出各层的误差，直到倒数第二层。以上图 (\ref{img:4层分类神经网络}) 的4层分类神经网络为例，首先规定一下符号表示：
+\begin{itemize}
+    \item \(a^{(j)}\)，表示第\(j\)层的输出。
+    \item \(z^{(j)}\)，表示第\(j\)层激活函数的变量，或者第\(j-1\)层的加权输出。
+    \item \(δ^{l}_j\)，第\(l\)层第\(j\)个单元的的cost偏导数，即\(\frac{∂}{∂z^{(l)}_j}\mathrm{cost}(i)\)。
+    % 是没有正则项的代价函数的偏导数的一部分，满足\(\frac{∂}{∂Θ^{(l)}_{ij}}J(Θ) = a^{(l)}_jδ^{l+1}_i\)，其中：
+    %     \begin{itemize}
+    %         \item \(j\)，表示第\(l\)层第\(j\)个单元。
+    %         \item \(i\)，表示第\(l+1\)层第\(i\)个激活单元。
+    %     \end{itemize}
+    \\形式上可以对比逻辑回归中代价函数偏导数的\((h_θ(x^{(i)}) - y^{(i)})x^{(i)_j}\)，求导也是相同的，还可以观察到输出层的\(δ^{L}= h_Θ(x) - y = a^{(L)} - y\)。
+\end{itemize}
+加入训练样本只有一个：\(x, y\)，正向传播即可计算出：
+\begin{align*}
+     & a^{(1)} = x                   & z^{(2)} = Θ^{(1)}a^{(1)} \\
+     & a^{(2)} = g(z^{(2)})          & z^{(3)} = Θ^{(2)}a^{(2)} \\
+     & a^{(3)} = g(z^{(3)})          & z^{(4)} = Θ^{(3)}a^{(3)} \\
+     & a^{(4)} = g(z^{(4)}) = h_Θ(x)                            \\
+\end{align*}
+对于\(δ^{l+1}_i\)，首先计算出的是输出层，利用反向传播计算出其他的：
+\begin{align*}
+     & δ^{4} = a^{(4)} - y                                                                \\
+     & δ^{3} = (Θ^{(3)})^Tδ^{(4)}.*g'(z^{(3)}) \quad (g'(z^{(3)}) = a^{(3)}.*(1-a^{(3)})) \\
+     & δ^{2} = (Θ^{(2)})^Tδ^{(3)}.*g'(z^{(2)}) \quad (g'(z^{(2)}) = a^{(2)}.*(1-a^{(2)})) \\
+\end{align*}
+
+上述只是针对每层的误差，对于所有偏导数，使用矩阵\(Δ^{(l)}_{ij}\)来表示未除以\(m\)，未加上正则项的偏导数；使用矩阵\(D^{(l)}_{ij}\)来表示第\(l\)层，第\(i\)个单元，第\(j\)个参数的偏导数，即\(\frac{∂}{∂Θ^{(l)}_{ij}}J(Θ) = D^{(l)}_{ij}\)。
+
+当有\(m\)个训练样本时，算法表示为：\\
+\begin{algorithm}[H]
+    initialization\;
+    \For{\(i=1\) \KwTo \(m\)}{
+    \(a^{(1)} ← x^{(i)}\)\;
+    perform forward propagation to compute \(a^{i} (i=1,2,⋯,L)\)\;
+    \(δ^{L} = a^{(L)} - y\)\;
+    \tcp{不求输入的误差}
+    perform back propagation to compute \(δ^{(L-1)}, δ^{(L-2)}, ⋯,δ^2\)\;
+    \tcp{这里的\(i\)不是循环中的第\(i\)个样本}
+    \(Δ^{(l)}_{ij} ← Δ^{(l)}_{ij} + a^{(l)}_jδ^{(l+1)}_i\)\;
+    }
+    \eIf{\(j=0\)}{
+    \tcp{所有偏置单元的边不需要正则化}
+    \(D^{(l)}_{ij} ← \frac{1}{m}Δ^{(l)}_{ij}\)\;
+    }{
+    \(D^{(l)}_{ij} ← \frac{1}{m}Δ^{(l)}_{ij} + \frac{λ}{m}Θ^{(l)}_{ij}\)\;
+    }
+\end{algorithm}
+矩阵化运算：每一层用矩阵运算，比如\(Δ^{(l)} ← Δ^{(l)} + δ^{(l+1)}(a^{(l)})^T\)。
+
+\section{反向传播算法的直观理解}
+% Back Propagation Intuition
+首先用前向传播计算\(z, a\)，比如\(z^{(3)}_1\)需要先计算出\(a^{(2)}\)，因为\(z^{(3)}_1=Θ^{(2)}_{10}×1 + Θ^{(2)}_{11}a^{(2)}_{1} + Θ^{(2)}_{12}a^{(2)}_{2}\)。
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        ->,
+        on grid,
+        node distance=32mm,
+        neuron/.append style={
+            ellipse,
+            minimum height=9mm,
+            minimum width=20mm,
+            font=\footnotesize,
+        }
+    ]
+    \node[neuron=black] (l1-0) at (0, 0) {\(+1\)};
+    \node[neuron=blue] (l1-1) at (0, -1.2) {\(x^{(i)}_1\)};
+    \node[neuron=blue] (l1-2) at (0, -2.4) {\(x^{(i)}_2\)};
+    \node[neuron=black, right=of l1-0] (l2-0) {\(+1\)};
+    \node[neuron, right=of l1-1] (l2-1) {\(z^{(2)}_1→a^{(2)}_1\)};
+    \node[neuron, right=of l1-2] (l2-2) {\(z^{(2)}_2→a^{(2)}_2\)};
+
+    \node[neuron=black, right=of l2-0] (l3-0) {\(+1\)};
+    \node[neuron, right=of l2-1] (l3-1) {\(z^{(3)}_1→a^{(3)}_1\)};
+    \node[neuron, right=of l2-2] (l3-2) {\(z^{(3)}_2→a^{(3)}_2\)};
+
+    \node[neuron, right=of l3-1, pin={[pin edge={black, thin}]right:\(h_Θ(x)\)}] (l4-1) {\(z^{(4)}_1→a^{(4)}_1\)};
+    \foreach \v[count=\i from 0] in {magenta,red,cyan}{
+        \draw (l3-\i.east) -> (l4-1.west);
+        \draw[\v, thick] (l2-\i.east) -> (l3-1.west) node[pos=0.5, font=\footnotesize]{\(Θ^{(2)}_{1\i}\)};
+        \draw (l2-\i.east) -> (l3-2.west);
+        \foreach \j in {1,2}
+            \draw (l1-\i.east) -> (l2-\j.west);
+    }
+    \end{tikzpicture}
+\end{figure}
+反向传播中，\(δ^{l}_j\)衡量的是\(a^{(l)}_j\)的“error”实际上是\(δ^{l}_j=\frac{∂}{∂z^{(l)}_j}\mathrm{cost}(i)\)。要注意的是，\(δ^{l}_j\)也类似于权重，比如\(δ^{(2)}_2=(Θ^{(2)}_{12}δ^{(3)}_1 + Θ^{(2)}_{22}δ^{(2)}_2) * g'(z^{(2)}_2)\)。
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        ->,
+        on grid,
+        node distance=25mm,
+        neuron/.append style={
+            ellipse,
+            minimum height=8mm,
+            minimum width=14mm,
+        }
+    ]
+    \node[neuron=black] (l1-0) at (0, 0) {\(+1\)};
+    \node[neuron=blue] (l1-1) at (0, -1.2) {\(x^{(i)}_1\)};
+    \node[neuron=blue] (l1-2) at (0, -2.4) {\(x^{(i)}_2\)};
+    \node[neuron=black, right=of l1-0] (l2-0) {\(+1\)};
+    \node[neuron, right=of l1-1] (l2-1) {\(δ^{(2)}_1\)};
+    \node[neuron, right=of l1-2] (l2-2) {\(δ^{(2)}_2\)};
+
+    \node[neuron=black, right=of l2-0] (l3-0) {\(+1\)};
+    \node[neuron, right=of l2-1] (l3-1) {\(δ^{(3)}_1\)};
+    \node[neuron, right=of l2-2] (l3-2) {\(δ^{(3)}_2\)};
+
+    \node[neuron, right=of l3-1, pin={[pin edge={black, thin}]right:\(h_Θ(x)\)}] (l4-1) {\(δ^{(4)}_1\)};
+    \foreach \i in {0,1,2} {
+        \draw (l3-\i.east) -> (l4-1.west);
+        \foreach \j in {1,2} {
+            \draw (l1-\i.east) -> (l2-\j.west);
+            \draw (l2-\i.east) -> (l3-\j.west);
+        }
+    }
+    \draw[magenta, thick] (l2-2.east) -> (l3-1.west) node[pos=0.5, font=\footnotesize]{\(Θ^{(2)}_{12}\)};
+    \draw[red, thick] (l2-2.east) -> (l3-2.west) node[pos=0.5, font=\footnotesize]{\(Θ^{(2)}_{22}\)};
+    % {magenta,red,cyan}
+    %     \draw[\v, thick] (l2-\i.east) -> (l3-1.west) node[pos=0.5, font=\footnotesize]{\(Θ^{(2)}_{1\i}\)};
+    \end{tikzpicture}
+\end{figure}
+
+\subsection{简易推导}
+仍以图 (\ref{img:4层分类神经网络})的4层分类神经网络为例，且假设样本只有1个。所谓误差是由\(Θ\)产生的，类似线性回归、逻辑回归中梯度下降的方法对每个\(Θ\) 进行修正，但是我们发现 Cost 的公式中仅包含\(Θ^{(L)}\)，那么我们就需要用反向传播间接地求出所有\(\frac{∂}{∂Θ^{(l)}_{ij}}J(Θ)\)。
+
+
+明确课程中的\(δ^{l}_j=\frac{∂}{∂z^{(l)}_j}\mathrm{cost}(i)\)，另外激活函数sigmoid的求导：
+\begin{align*}
+    g'(z) & = (\frac{1}{1+e^{-z}})'       \\
+          & = \frac{e^{-z}}{(1+e^{-z})^2} \\
+          & = g(z)(1- g(z))
+\end{align*}
+首先先推导课程直接给出的\(δ^{(4)} = a_4 - y\)：
+\begin{align*}
+    δ^{(4)} & = \frac{∂J}{∂z^{(4)}}                                                    \\
+            & = \frac{∂J}{∂a^{(4)}}\frac{a^{(4)}}{∂z^{(4)}}                            \\
+            & = a^{(4)}(1-a^{(4)})\big(-\frac{y}{a^{(4)}} + \frac{1-y}{1-a^{(4)}}\big) \\
+            & = a^{(4)} -y
+\end{align*}
+然后求偏导数\(\frac{∂J}{∂Θ^{(3)}}\)，已知：
+\begin{align*}
+     & δ^{(4)} = \frac{∂J}{∂z^{(3)}} \\
+     & z^{(4)} = Θ^{(3)}a^{(3)}
+\end{align*}
+\textbf{注意}：\(a^{(l)}\)一般写出来是不包括偏置单元、激活函数不作用于偏置单元，而\(z^{(l)}\)一般写出来是包含偏置单元的（除了输出层）。那么\(a\)与\(Θ\)矩阵运算时相当于添加一个偏置单元1后的\(a\)，在上面的式子中\(a^{(3)}_0=1\)。
+
+然后进行求导：
+\begin{align*}
+    \frac{∂J}{∂Θ^{(3)}} & = \frac{∂J}{∂z^{(4)}} \frac{∂∂z^{(3)}}{∂Θ^{(3)}} \\
+                        & =  δ^{(4)} (a^{(3)})^T
+\end{align*}
+注意：如果单独计算\(\frac{∂J}{∂Θ^{(3)}_{i0}}\)，那么\(\frac{∂J}{∂Θ^{(3)}_{i0}}=δ^{(4)}\)。
+
+\textbf{注意}：这里的\(δ^{(4)}\)不包含偏置单元，因为前馈时前一层就没有影响下一层的偏置单元。
+接着就是用\(δ^{(4)}\)求\(δ^{(3)}\)：
+\begin{align*}
+    δ^{(3)} & = \frac{∂J}{∂z^{(3)}}                                                   \\
+            & = \frac{∂J}{∂z^{(4)}}\frac{∂z^{(4)}}{∂a^{(3)}}\frac{∂a^{(3)}}{∂z^{(3)}} \\
+            & = (Θ^{(3)})^Tδ^{(4)}g'(z^{(3)})
+\end{align*}
+其余部分就和前面的流程一样了。
+
+\section{实现注意：展开参数}
+% Implementation Note: Unrolling Parameters
+在实现时，梯度下降工作交给最优化算法去做，我们只需提供代价函数（计算cost和gradient）与参数，但是参数要求是一个向量（一维数组），梯度也有这个要求，这就需要将矩阵\(Θ, D\) reshape为向量（\(Θ, D\)并不一定是矩阵，而且常常不是矩阵）。
+
+\section{梯度检验}
+% Gradient Checking
+当对一个较为复杂的模型（例如神经网络）实现梯度下降算法时，可能会存在一些不容易察觉的bug，这时虽然J看上去在不断减小，但最终的结果可能并不是最优解。
+
+
+为了避免这样的问题，可以使用一种叫做\textbf{梯度的数值检验（Numerical Gradient Checking）}的方法。简言之，就是通过另一种准确实现的求梯度方法求出梯度，作为标准值，我们实现的求梯度方法求出的梯度与标准值进行比较，若差异较小，可以认为算法无误。
+
+
+比如说用双边偏导数定义来计算标准值，检验反向传播算法：先求一个偏导数\[
+    \frac{∂}{∂θ_1} = \frac{J(θ_1+ε, θ_2, ⋯ , θ_n) - J(θ_1-ε, θ_2, ⋯ , θ_n)}{2ε}
+\]\(ε\)一般取\(10^{-4}\)，过大的话导数不精确，过小的话可能超出计算机的计算范围。将所有参数的偏导数求出后，与\(D^{(l)}_{ij}\)比较。
+
+
+梯度是一个向量而非实数，向量、矩阵的比较需要引入范数，范数也有多种，具体的实现另说。
+\section{随机初始化}
+% Random Initialization
+任何优化算法都需要一些初始的参数。到目前为止我们都是初始所有参数为0，这样的初始方法对于逻辑回归来说是可行的，但是对于神经网络来说是不可行的。如果我们令所有的初始参数都为0，这将意味着我们第二层的所有激活单元都会有相同的值。同理，如果我们初始所有的参数都为一个非0的数，结果也是一样的。
+
+通常初始参数取\(±ε\)之间的均匀分布随机值。
+
+\section{综合起来}
+% Putting It Together
+选择网络结构的经验：
+\begin{itemize}
+    \item 隐藏层自然越多越好，但三层网络也很强大。
+    \item 隐藏层单元数与特征数量相匹配，一般取1倍、2倍、4倍。
+    \item 每个隐藏层的单元个数最好相同。
+\end{itemize}
+训练神经网络的常用步骤：
+\begin{enumerate}
+    \item 随机初始化权重
+    \item 利用正向传播，计算\(h_Θ(x^{(i)})\)
+    \item 计算\(J\)
+    \item 利用反向传播，计算\(\frac{∂}{∂Θ^{(l)}_{ij}}J(Θ)\)
+    \item 利用数值检验法检验算法
+    \item 使用最优化算法来最小化代价函数
+\end{enumerate}
+
+\end{document}

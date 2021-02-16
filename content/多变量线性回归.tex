@@ -1,0 +1,136 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{多变量线性回归}
+% Linear Regression with Multiple Variables
+\section{多维特征}
+前一章讨论的是单变量（或者称为：{\bfseries 特征feature}）的回归模型，当有多个特征时，用一个特征向量表示：\(x^{(i)} = \begin{bmatrix}
+    1 \\x_1 \\x_2\\\vdots\\x_n
+\end{bmatrix}\)，同时\(θ_j = \begin{bmatrix}
+    θ_0 \\θ_1 \\θ_2\\\vdots\\θ_n
+\end{bmatrix}\)，那么Hypothesis就是
+\begin{align*}
+    h_θ(x) & = θ_0+θ_1x_1+θ_2x_2+\cdots+θ_nx_n \\
+           & = θ^Tx
+\end{align*}
+\begin{remark}
+    \begin{itemize}
+        \item \(x_0\)规定为\(1\)；
+        \item \textbf{特征的数量}用\(n\)表示；
+        \item 训练集一般按行写的矩阵，即每个行向量是一个特征向量，但是表示一个向量时一般使用列向量的形式：
+        \[x^{(i)} = \begin{bmatrix}1 \\x_1 \\x_2\\\vdots\\x_n\end{bmatrix},
+            X = \begin{bmatrix}
+                1      & x^{(1)}_1 & x^{(1)}_2 & \cdots & x^{(1)}_n \\
+                1      & x^{(2)}_1 & x^{(2)}_2 & \cdots & x^{(2)}_n \\
+                \vdots & \vdots    & \vdots    & \ddots & \vdots    \\
+                1      & x^{(m)}_1 & x^{(m)}_2 & \cdots & x^{(m)}_n
+            \end{bmatrix} = \begin{bmatrix}
+                ( x^{(1)})^T \\(x^{(2)})^T\\\vdots \\(x^{(m)})^T
+            \end{bmatrix}
+        \]
+    \end{itemize}
+\end{remark}
+最后，类似单变量线性回归，我们同样得到了这么几样东西：
+\begin{itemize}
+    \item Hypothesis：\(h_θ(x)= θ^Tx\)
+    \item Parameters：\(θ_0, θ_1,\ldots,θ_n\)（\(θ\)）
+    \item Cost function：\[J(θ)=\frac{1}{2m}\sum\limits_{i-1}^{m}(h_θ(x)^{(i)}-y^{(i)})^2\]
+\end{itemize}
+
+
+\section{多变量梯度下降}
+% Gradient Descent for Multiple Variables
+
+Gradient descent算法：\\
+\begin{algorithm}[H]
+    \caption{Gradient Descent for Multiple Variables}
+    initialization\;
+    \While{not convergence}{
+        \(θ_j ← θ_j - α\frac{∂}{∂θ_j}J(θ_0, θ_1,\ldots,θ_n)\) (j=0,1,\ldots, n)\;
+    }
+\end{algorithm}
+代价函数的偏导数：
+\[
+    \frac{∂J(θ)}{∂θ_j}=
+    \frac{1}{m}\sum\limits_{i=1}^m(h_θ(x^{(i)})-y^{(i)})x_j^{(i)}
+\]
+
+\section{梯度下降法实践1-特征缩放}
+% Gradient Descent in Practice I - Feature Scaling
+在我们面对多维特征问题的时候，我们要保证这些特征都具有相近的尺度，这将帮助梯度下降算法更快地收敛。一般要将所有特征的尺度都尽量缩放到-1到1之间，实践上取\([-3,-\frac{1}{3}]∪[\frac{1}{3},3]\)使用。
+\[x_n = \frac{x_n-u_n}{s_n}\]
+来缩放，其中\(u_n\)为均值，\(s_n\)为标准差，简易情况下也可以用最大值减最小值来代替。
+
+\begin{remark}
+    所谓Feature scaling，这里就是进行了归一化。
+\end{remark}
+
+\section{梯度下降法实践2-学习率}
+% Gradient Descent in Practice II - Learning Rate
+梯度下降算法收敛所需要的迭代次数根据模型的不同而不同，我们不能提前预知，我们可以绘制迭代次数和代价函数的图表来观测算法在何时趋于收敛。
+
+
+也有一些自动测试是否收敛的方法，例如将代价函数的变化值与某个阀值（例如0.001）进行比较，但通常看上面这样的图表更好。
+
+如果达到收敛所需的迭代次数会非常高，就是\(α\)偏小。如果有其他问题，如不断J不断增大、J忽大忽小，在代码正确的前提下，九成九是因为\(α\)偏大。
+
+
+通常可以考虑尝试这些学习率（3倍的增减）：\[α=0.01, 0.03, 0.1, 0.3, 1, 3, 10\]
+
+\section{特征和多项式回归}
+% Features and Polynomial Regression
+\paragraph{选择合适的特征}比如原始数据是长宽，但不一定必须使用长宽，可以使用面积作为特征。
+\paragraph{选择合适的回归模型}典型的单特征回归模型中，参考数据图形，可以更合适的多项式回归模型（变成了多个特征），如
+\begin{align*}
+     & h_θ(x) = θ_0 + θ_1x + θ_2x^2          \\
+     & h_θ(x) = θ_0 + θ_1x + θ_2x^2 + θ_3x^3 \\
+     & h_θ(x) = θ_0 + θ_1x + θ_2\sqrt{x}
+\end{align*}
+
+\section{正规方程}
+% Normal Equation
+
+对于某些线性回归问题，正规方程方法是更好的解决方案，梯度下降是迭代法求解，这则用\textit{解析法}求解，利用导数来求最小值点。
+
+
+经数学推导，\(θ=(X^TX)^{-1}X^Ty\)
+
+那么对于一个有\(m\)个数据，\(n(+1)\)个特征的线性回归问题，表面上解析法优势明显：不用选择\(α\)、不需要迭代，但是当n非常大时，\((X^TX)\)是一个\((n+1)×(n+1)\)的矩阵，计算机求矩阵逆的时间复杂度是\(O(n^3)\)，这是计算就非常缓慢。\\
+\begin{remark}
+    计算机求矩阵的逆使用的是高斯消元法。
+\end{remark}
+一般情况下，当n大于一万时就不当用正规方程法了。
+\begin{minted}{py}
+# 正规方程法的Python实现：
+import numpy as np
+def normal_Equation(X, y):
+    theta = np.linalg.pinv(X.T@X)@X.T@y
+    return theta
+\end{minted}
+\subsection{推导}
+\(J(θ)=\frac{1}{2m}\sum\limits_{i=1}^{m}(h_θ(x^{(i)})-y^{(i)})^2\)，其中\(h_θ(x^{(i)})=θ^Tx^{(i)}\)，将向量形式的\(J(θ)\)转化为矩阵表示形式，则有：
+\begin{align*}
+    J(θ) & =\frac{1}{2m}\sum\limits_{i=1}^{m}(Xθ-y).\^{}2    \\
+         & =\frac{1}{2m}(Xθ-y)^T(Xθ-y)                      \\
+         & =\frac{1}{2m}(θ^TX^T-y)(Xθ-y)                    \\
+         & =\frac{1}{2m}(θ^TX^T-y^T)(Xθ-y)                  \\
+         & =\frac{1}{2m}(θ^TX^TXθ - θ^TX^Ty - y^TXθ - y^Ty)
+\end{align*}
+然后对\(J(θ)\)求偏导，用到的矩阵求导法则：
+\begin{align*}
+     & \frac{dAB}{dB}=A^T    \\
+     & \frac{dX^TAX}{dX}=2AX
+\end{align*}
+所以有：
+\begin{align*}
+    \frac{∂J(θ)}{∂θ} & =\frac{1}{2m}(2X^TXθ - X^Ty - (y^TX)^T - 0) \\
+                     & =\frac{1}{2m}(2X^TXθ - X^Ty - X^Ty - 0)     \\
+                     & =\frac{1}{m}(X^TXθ - X^Ty)
+\end{align*}
+令\(\frac{∂J(θ)}{∂θ}=0\)，则有：\[θ=(X^TX)^{-1}X^Ty\]
+
+\section{正规方程在不可逆的情况下}
+% Normal Equation Noninvertibility
+\((X^TX)\)有不可逆的情况，但是使用pinv这种伪求逆函数仍然可以正常计算。
+存在线性相关的特征时\((X^TX)\)不可逆，当\(m<n\)时\((X^TX)\)不可逆，这时需要合并线性相关的特征，精简多余的特征，或者正规化（\textbf{regularization}）。
+
+\end{document}

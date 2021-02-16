@@ -1,0 +1,81 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{正则化}
+% Regularization
+\section{过拟合问题}
+% The Problem of Overfitting
+拟合结果可能恰好合适：能很好的预测（应用到新的样本中），预测较差可能有两种情况：
+\begin{itemize}
+    \item \textbf{欠拟合 Underfitting}：不能适应训练集，自然也不能预测准确。
+    \item \textbf{过拟合 Overfitting}：很好的适应了训练集，甚至\(J(θ)=0\)，但是过于强调拟合原始数据，丢失了算法的本质，导致无法\textbf{泛化 (generalized) }到新的样本。
+\end{itemize}
+
+解决这个问题有两个办法：
+\begin{itemize}
+    \item 减少特征数量：手动剔除；模型选择法。
+    \item 正则化
+\end{itemize}
+另外，还有一些能判断拟合情况的方法。
+
+\section{代价函数}
+对于代价函数，如果加入一个惩罚项如\(λθ_3^2, λ比较大\)，若要最小化代价函数，那么\(θ_3\)就要比较小 ，如果\(θ_3\)是一个高阶项，所得的函数也也更平滑，缓解了过拟合的问题。
+
+
+若有很多特征，但是并不知道那些特征需要惩罚来缩小 (shrink)，这时可以给所有的特征加上惩罚项（根据惯例，不对\(θ_0\)进行惩罚），称之为\textbf{正则化项 regularization term}，其中\(λ\)称为\textbf{正则化参数 Regularization Parameter}：
+\[
+    J(θ)  = \frac{1}{m}\sum\limits_{i=1}^{m}Cost(h_θ(x^{(i)}), y^{(i)}) + \frac{λ}{2m}\sum\limits_{j=1}^{n}θ_j^2
+\]
+注意，如果\(λ\)设置的过大，将导致所有的参数都很小，处于欠拟合，结果近似一条平行于\(x\)轴的直线。\\
+\begin{remark}
+    理解很困难，试验观察一下很有效。
+\end{remark}
+
+\section{正则化线性回归}
+% Regularized Linear Regression
+\paragraph{代价函数}
+\[
+    J(θ)  = \frac{1}{m}\sum\limits_{i=1}^{m}\sum\limits_{i-1}^{m}(h_θ(x)^{(i)}-y^{(i)})^2 + \frac{λ}{2m}\sum\limits_{j=1}^{n}θ_j^2
+\]
+
+\paragraph{梯度下降的正则化}~\\
+\begin{algorithm}[H]
+    initialization\;
+    \While{not convergence}{
+    \(θ_0 ← θ_0 - α\frac{1}{m}\sum\limits_{i=1}^m(h_θ(x^{(i)})-y^{(i)})x_j^{(i)}\)\;
+    \(θ_j ← θ_j(1 - α\frac{λ}{m}) - α\frac{1}{m}\sum\limits_{i=1}^m(h_θ(x^{(i)})-y^{(i)})x_j^{(i)}\) (j=1,2,\ldots, n)\;
+    }
+\end{algorithm}
+
+\paragraph{正规方程的正则化}
+\[
+    θ=\Bigg(X^TX  + λ\underbrace{\begin{bmatrix}
+            0 &   &   &   &   \\
+              & 1 &   &   &   \\
+              &   & 1 &   &   \\
+              &   &   & ⋱ &   \\
+              &   &   &   & 1 \\
+        \end{bmatrix}}_{(n+1)×(n+1)}\Bigg)^{-1}X^Ty
+\]
+正则化还有一个有点，加上正则项后可以保证可逆。
+
+\section{正则化的逻辑回归模型}
+% Regularized Logistic Regression
+\paragraph{代价函数}
+\[
+    J(θ) = \frac{1}{m}\sum\limits_{i=1}^{m}-y^{(i)}\log(h_θ(x^{(i)})) + (y^{(i)}-1)\log(1- h_θ(x^{(i)}))
+    + \frac{λ}{2m}\sum\limits_{j=1}^{n}θ_j^2
+\]
+
+\paragraph{梯度下降的正则化}形式上和线性回归一样：\\
+\begin{algorithm}[H]
+    initialization\;
+    \While{not convergence}{
+    \(θ_0 ← θ_0 - α\frac{1}{m}\sum\limits_{i=1}^m(h_θ(x^{(i)})-y^{(i)})x_j^{(i)}\)\;
+    \(θ_j ← θ_j(1 - α\frac{λ}{m}) - α\frac{1}{m}\sum\limits_{i=1}^m(h_θ(x^{(i)})-y^{(i)})x_j^{(i)}\) (j=1,2,\ldots, n)\;
+    }
+\end{algorithm}
+
+\subsection{正则化高级算法}
+在我们提供给高级算法的cost function和gradient function使用正则化就好了。
+
+\end{document}

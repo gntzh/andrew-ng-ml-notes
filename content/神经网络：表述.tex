@@ -1,0 +1,326 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{神经网络：表述}
+% Neural Networks: Representation
+\section{非线性假设}
+无论是线性归回还是逻辑回归，为了更准确的拟合数据，会使用所有的多项式组合，同时还要添加一个正则项来避免过拟合，这又一个明显的缺点，就是在特征较多时，计算量特别大，多项式组合近似\(\frac{n^2}{2}\)个。
+
+
+而在机器学习中特征几乎都很多，以一个50×50像素的图像识别为例，仅使用灰度图片就需要2500个特征，而多项式组合接近3百万个，普通的逻辑回归是难以有效处理这么多的特征的，而神经网络对此十分有效。
+
+\section{神经元和大脑}
+神经网络听着很新奇，其实算是一种很古老的算法，机器学习时代这一算法变得火热。它最初产生的目的是制造能模拟大脑的机器，在机器学习中它能很好地解决不同的机器学习问题。
+
+
+神经网络受大脑学习的启发。人的大脑比我们写的程序“高效”的多，只需一个单一的学习算法就能完成成千上万的事，例如，BrainPort系统将摄像头采集的低分辨率的灰度图像映射到电极阵列上，它将像素以电压值强弱对应像素亮度映射到舌头上，这样的一个系统，能然人在几十分钟里学会用舌头“看”东西。
+
+
+而我们需要针对不同的事情，运行上千个不同的程序，或者上千个不同的算法来做这些大脑所完成的成千上万的美好事情。也许我们需要做的就是找出一些近似的或实际的大脑学习算法，能通过自学掌握如何处理这些不同类型的数据。
+
+
+\section{模型表示 1}
+大脑中的神经网络由神经元构成，每个神经元都可以由一个\textbf{处理单元}：神经核，\textbf{一个输入}：树突，\textbf{一个输出}：轴突构成。大量神经元相互链接并通过电脉冲来交流，组成大脑中的网络。
+
+
+神经网络算法（模型）就是对大脑神经网络的仿生：神经网络模型建立在很多神经元之上，每一个神经元又是一个个学习模型，这些神经元称为\textbf{激活单元 activation unit}，它们接收一些特征作为输如，由根据本身的模型提供一个输出，神经网络中的参数一般称为\textbf{权重 weight}。一个以逻辑回归模型作为自身学习模型的神经元示例：
+
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=3cm,
+        on grid,
+        ->,
+        neuron/.append style={minimum size=9mm,}
+    ]
+        \foreach \i in {0,...,3}{
+            % input layer nodes
+            \node[neuron=blue] (I-\i) at (0, -\i) {\(x_\i\)};
+            % hidden layer nodes
+            \node[neuron, right=of I-\i] (H-\i) {\(a_\i^{(2)}\)};
+        }
+        % output layer node
+        \node[
+            neuron,
+            right=of H-2,
+            yshift=0.5cm,
+            pin={[pin edge={black,thin}]right:\(h_Θ(x)\)},
+        ] (O) {};
+        \foreach \source in {0,...,3}{
+            % Connect hidden layer with the output layer
+            \path (H-\source .east) edge (O.west);
+            % Connect input layer with hidden layer.
+            \foreach \dest in {1,...,3}
+                \path (I-\source .east) edge (H-\dest .west);
+        }
+        % Annotate the layers
+        \node[text centered, below = 0.2em of I-3.south] {layer 1};
+        \node[text centered, below = 0.2em of H-3.south] (hl) {layer 2};
+        \node[text centered, right=of hl] {layer 3};
+    \end{tikzpicture}
+\end{figure}
+
+\begin{enumerate}
+    \item 第一层是\textbf{输入层 Input Layer}，输入特征；
+    \item 第二层是\textbf{隐藏层 Hidden Layers}，隐藏层可能不止一层；
+    \item 第三层是\textbf{输出层 Output Layer}，输出层只有一个，但输出单元一般有多个。
+\end{enumerate}
+
+输入层只有输出，没有输入和计算，每个单元称为\textbf{输入单元 Input Units}。隐藏层和输出层其实是一样的，每一层的输出都是下一层的输入（也可以看作更高级的特征），只是输出层的输出作为结果，它们的单元都接收数据，处理并输出，称之为\textbf{激活单元 activation unit}。
+
+
+特别的，每一层的输出都会加上一个\textbf{偏置单元 Bias Uint}，即图中\(x_0, a_0^{(2)}\)，一般都是1。
+
+\section{模型表示 2}
+\paragraph{符号} \(a_i^{(l)}\)代表第\(l\)层、第\(i\)个激活单元。\(Θ^{l}\)表示第\(l\)层映射（边）到第\(l+1\)层的\textbf{权重矩阵}（前一层的输出作为输入，后一层计算后输出，\(Θ^{l}\)是后一层激活函数的参数）。它的size为\(s_{l+1}×s_l\)：以\(l+1\)层的激活单元数为行数，以\(l\)层的单元数为列数。
+
+对于激活单元，我们可以写出它们的表达式（输入、计算、输出）：
+\begin{align*}
+             & a_1^{(2)} = g(Θ_{10}^{(1)}x_0 + Θ_{11}^{(1)}x_1 + Θ_{12}^{(1)}x_2 + Θ_{13}^{(1)}x_3)                         \\
+             & a_2^{(2)} = g(Θ_{20}^{(1)}x_0 + Θ_{21}^{(1)}x_1 + Θ_{22}^{(1)}x_2 + Θ_{23}^{(1)}x_3)                         \\
+             & a_3^{(2)} = g(Θ_{30}^{(1)}x_0 + Θ_{31}^{(1)}x_1 + Θ_{32}^{(1)}x_2 + Θ_{33}^{(1)}x_3)                         \\
+             &                                                                                                              \\
+    h_Θ(x) = & a_1^{(3)} = g(Θ_{10}^{(2)}a_0^{(0)} + Θ_{11}^{(2)}a_1^{(1)} + Θ_{12}^{(2)}a_2^{(2)} + Θ_{13}^{(2)}a_3^{(3)}) \\
+\end{align*}
+
+可以看到激活单元都做了相似的计算，称为\textbf{激活函数 Activation Function}，这里激活函数是sigmoid函数。权重矩阵：
+\[
+    Θ^{1} = \begin{bmatrix}
+        Θ_{10}^{(1)} & Θ_{11}^{(1)} & Θ_{12}^{(1)} & Θ_{13}^{(1)} \\
+        Θ_{20}^{(1)} & Θ_{21}^{(1)} & Θ_{22}^{(1)} & Θ_{23}^{(1)} \\
+        Θ_{30}^{(1)} & Θ_{31}^{(1)} & Θ_{32}^{(1)} & Θ_{33}^{(1)}
+    \end{bmatrix},
+    Θ^{2} = \begin{bmatrix}
+        Θ_{10}^{(2)} & Θ_{11}^{(2)} & Θ_{12}^{(2)} & Θ_{13}^{(2)}
+    \end{bmatrix}
+\]
+
+\paragraph{符号} 可以观察到激活函数的自变量也可以写成矩阵，记为\(z_i^{(j)}\)表示第\(j\)层激活函数的自变量，自然一层的计算可以写成
+\[
+    a^{(j)} = g(z^{(j)}) = g(Θ^{(1)}a^{(j-1)})
+\]
+其中\(a^(i)\)表示第\(j\)层的输出，这是一个行向量，\(a^0\)是特殊的偏置单元，那么
+\begin{align*}
+             & a^{(1)} = x                                \\
+             & a^{(2)} = g(z^{(2)}) = g(Θ^{(1)}a^{(1)})   \\
+    h_Θ(x) = & a_1^{(3)} = g(z^{(3)}) = g(Θ^{(2)}a^{(2)})
+\end{align*}
+
+最终决策使用的“特征”十分复杂：
+\[
+    h_Θ(x) = g(Θ_{10}^{(2)}a_0^{(0)} + Θ_{11}^{(2)}a_1^{(1)} + Θ_{12}^{(2)}a_2^{(2)} + Θ_{13}^{(2)}a_3^{(3)})
+\]
+输出层利用的是神经网络第二层通过学习后自己得出的一系列用于预测输出变量的新特征，如果有更多的层, 相当于多层感知器，得到的特征将会更多、更复杂。这些复杂特征组合远比仅仅将原始特征进行有限的多项式组合厉害，能更好的预测新数据。
+
+
+
+神经元的连接方式称之为\textbf{架构 Architecture}。例如一个四层架构（没有画偏置单元）：
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=2.5cm,
+        on grid,
+        ->,
+    ]
+        \foreach \i in {1,...,3}{
+            \node[neuron=blue] (L1-\i) at (0, -\i) {\(x_\i\)};
+            \node[neuron, right=of L1-\i] (L2-\i) {};
+        }
+        \node[neuron, right=of L2-2, yshift=0.5cm,] (L3-1) {};
+        \node[neuron, right=of L2-3, yshift=0.5cm,] (L3-2) {};
+        \node[neuron, pin={[pin edge={black,thin}]right:\(h_Θ(x)\)}, right=of L3-2, yshift=0.5cm,] (L4-1) {};
+
+        \foreach \source in {1,...,3}{
+            \path (L2-\source .east) edge (L3-1.west);
+            \path (L2-\source .east) edge (L3-2.west);
+            \foreach \dest in {1,...,3}
+                \path (L1-\source .east) edge (L2-\dest .west);
+        }
+        \path (L3-1.east) edge (L4-1.west);
+        \path (L3-2.east) edge (L4-1.west);
+    \end{tikzpicture}
+\end{figure}
+
+\section{特征和直观理解 1}
+% Examples and Intuitions I
+机器学习要解决的一个重要问题是非线性问题，简化的情况就是线性不可分的\textbf{异或/同或 (XOR/XNOR)}问题，即无法用一条直线将下图中的四个点分类：
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[on grid, node distance=2.5cm,]
+        \begin{axis}[
+            width=5cm,
+            axis lines=middle,
+            xtick={0,1},ytick={0,1},
+            enlargelimits=0.3,
+        ]
+        \addplot[
+            scatter,
+            only marks,
+            scatter src=explicit symbolic,
+            scatter/classes={
+            0={mark=*,red},
+            1={mark=*,blue}% <-- don't add comma
+            },
+        ] table [x=a,y=b,meta=y] {
+            a b y
+            0 0 0
+            0 1 1
+            1 0 1
+            1 1 0
+        };
+        \end{axis}
+    \end{tikzpicture}
+    \hspace{1cm}
+    \begin{tikzpicture}[on grid, node distance=2.5cm,]
+        \begin{axis}[
+            width=5cm,
+            axis lines=middle,
+            xtick={0,1},ytick={0,1},
+            enlargelimits=0.5,
+        ]
+        \addplot[
+            scatter,
+            only marks,
+            scatter src=explicit symbolic,
+            scatter/classes={
+            0={mark=*,red},
+            1={mark=*,blue}% <-- don't add comma
+            },
+        ] table [x=a,y=b,meta=y] {
+            a b y
+            0 0 1
+            0 1 0
+            1 0 0
+            1 1 1
+        };
+        \end{axis}
+    \end{tikzpicture}
+\end{figure}
+单个神经元或者逻辑回归只能解决\textbf{AND, OR, NOT}这种线性问题，面对非线性问题，如果仍然使用线性回归，就需要将特征进行多项式组合，而神经网络则可以\textit{通过神经元的的连接}实现异或。
+
+\begin{remark}
+    最新的研究中，人脑有的神经元单个就可进行异或运算。
+\end{remark}
+
+如果只有一个神经元，那就是简单的逻辑回归：
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[on grid, node distance=2.5cm,->]
+        \node[neuron=black] (l1-0) at (0, 0) {\(1\)};
+        \node[neuron=blue] (l1-1) at (0, -1) {\(x_1\)};
+        \node[neuron=blue] (l1-2) at (0, -2) {\(x_2\)};
+        \node[neuron, right=of l1-1, pin={[pin edge={black, thin}]right:\(h_Θ(x)\)}] (l2-1) {};
+        \foreach \i in {0,1,2}
+            \draw (l1-\i .east) -> (l2-1.west);
+    \end{tikzpicture}
+\end{figure}
+对于一个神经元只要调整权重就能很容易的实现AND、OR、NOT。以AND为例，调整权重为\(-30,20,20\)，即可以实现：
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.4\textwidth}
+        \vfill
+        \begin{tikzpicture}[on grid, node distance=2.5cm,->]
+        \node[neuron=black] (l1-0) at (0, 0) {\(1\)};
+        \node[neuron=blue] (l1-1) at (0, -1) {\(x_1\)};
+        \node[neuron=blue] (l1-2) at (0, -2) {\(x_2\)};
+        \node[neuron=red, right=of l1-1, pin={[pin edge={black, thin}]right:\(h_Θ(x)\)}] (l2-1) {};
+        \foreach \v[count=\i from 0] in {-30,20,20}
+            \draw[red] (l1-\i .east) -> (l2-1.west) node[near start]{\(\v\)};
+        \end{tikzpicture}
+        \vfill
+    \end{minipage}
+    \begin{minipage}{0.4\textwidth}
+        \begin{tabular}{ccr}
+            \toprule
+            \(x_1\) & \(x_2\) & \(h_Θ(x)\)   \\
+            \midrule
+            0       & 0       & \(g(-30)≈0\) \\
+            0       & 1       & \(g(-10)≈0\) \\
+            1       & 0       & \(g(-10)≈0\) \\
+            1       & 1       & \(g(10)≈1\)  \\
+            \bottomrule
+        \end{tabular}
+    \end{minipage}
+\end{figure}
+类似的OR、NOT也都能实现：
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.4\textwidth}
+        \begin{tikzpicture}[on grid, node distance=2.5cm,->]
+        \node[neuron=black] (l1-0) at (0, 0) {\(1\)};
+        \node[neuron=blue] (l1-1) at (0, -1) {\(x_1\)};
+        \node[neuron=blue] (l1-2) at (0, -2) {\(x_2\)};
+        \node[neuron=green, right=of l1-1, pin={[pin edge={black, thin}]right:\(h_Θ(x)\)}] (l2-1) {};
+        \foreach \v[count=\i from 0] in {-10,20,20}
+            \draw[green] (l1-\i .east) -> (l2-1.west) node[pos=0.4]{\(\v\)};
+        \end{tikzpicture}
+    \end{minipage}
+    \begin{minipage}{0.4\textwidth}
+        \vfill
+        \begin{tikzpicture}[on grid, node distance=2.5cm,->]
+            \node[neuron=black] (l1-0) at (0, 0) {\(1\)};
+            \node[neuron=blue] (l1-1) at (0, -1) {\(x_1\)};
+            \node[neuron, right=of l1-1, yshift=0.5cm, pin={[pin edge={black, thin}]right:\(h_Θ(x)\)}] (l2-1) {};
+            \foreach \v[count=\i from 0] in {10,-20}
+                \draw (l1-\i .east) -> (l2-1.west) node[pos=0.4]{\(\v\)};
+        \end{tikzpicture}
+        \vfill
+    \end{minipage}
+\end{figure}
+
+\section{特征和直观理解 2}
+实现了与或非后，即可实现同或\(a⊙b=ab+a'b'\)，为了简化神经网络，可以先用一个神经元实现\((\mathrm{NOT} x_1)\mathrm{OR}((\mathrm{NOT} x_1) \mathrm{AND} (\mathrm{NOT} x_2))\)：
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[on grid, node distance=2.5cm,->]
+        \node[neuron=black] (l1-0) at (0, 0) {\(1\)};
+        \node[neuron=blue] (l1-1) at (0, -1) {\(x_1\)};
+        \node[neuron=blue] (l1-2) at (0, -2) {\(x_2\)};
+        \node[neuron=cyan, right=of l1-1, pin={[pin edge={black, thin}]right:\(h_Θ(x)\)}] (l2-1) {};
+        \foreach \v[count=\i from 0] in {10,-20,-20}
+            \draw[cyan] (l1-\i .east) -> (l2-1.west) node[near start]{\(\v\)};
+    \end{tikzpicture}
+\end{figure}
+通过组合这些神经元很容易完成同或：
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=3cm,
+        on grid,
+        ->,
+        neuron/.append style={minimum size=9mm,}
+    ]
+        \node[neuron=black] (l1-0) at (0, 0) {\(1\)};
+        \node[neuron=blue] (l1-1) at (0, -1) {\(x_1\)};
+        \node[neuron=blue] (l1-2) at (0, -2) {\(x_2\)};
+        \node[neuron=black, right=of l1-0] (l2-0) {\(1\)};
+        \node[neuron=red, right=of l1-1] (l2-1) {\(a_1^{(2)}\)};
+        \node[neuron=cyan, right=of l1-2] (l2-2) {\(a_2^{(2)}\)};
+        \node[neuron=green, right=of l2-1, pin={[pin edge={black, thin}]right:\(h_Θ(x)\)}] (l3-1) {\(a_1^{(3)}\)};
+        \foreach \i in {0,1,2}{
+            \draw[red] (l1-\i .east) -> (l2-1.west);
+            \draw[cyan] (l1-\i .east) -> (l2-2.west);
+            \draw[green] (l2-\i .east) -> (l3-1.west);
+        }
+    \end{tikzpicture}
+\end{figure}
+\section{多类分类}
+当不止两种分类时（\(y=1,3,3,⋯\)），比如识别路人、汽车、摩托车和卡车，那么神经网络输出层应该有4个输出，，输出结果为四种可能情形之一：
+\[
+    h_Θ(x)=\begin{bmatrix}
+        1 \\0\\0\\0
+    \end{bmatrix},\quad\begin{bmatrix}
+        0 \\1\\0\\0
+    \end{bmatrix},\quad\begin{bmatrix}
+        0 \\0\\1\\0
+    \end{bmatrix},\quad\begin{bmatrix}
+        0 \\0\\0\\1
+    \end{bmatrix}
+\]
+第一个值为1或0用于预测是否是行人，第二个值用于判断是否为汽车······。
+
+\end{document}

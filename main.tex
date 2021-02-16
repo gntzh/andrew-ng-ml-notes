@@ -1,0 +1,88 @@
+\documentclass{report}
+
+\usepackage{booktabs}% 三线表
+\usepackage{caption}
+\usepackage[lined,boxed]{algorithm2e}
+\input{./preamble.tex}
+
+\usetikzlibrary{positioning,shapes.geometric}
+\usetikzlibrary{external}
+\tikzexternalize[prefix=tikz/,optimize command away=\includepdf]
+\tcbset{shield externalize} % 屏蔽layer层的externalize, 避免与tcolorbox的冲突
+
+\tikzset{
+    neuron/.style={
+        thick,
+        circle,
+        minimum size=6mm,
+        inner sep=0.05em,
+        draw=#1,
+        fill=#1!8,
+    },
+    neuron/.default=orange,
+}
+
+\title{吴恩达机器学习入门课程笔记}
+\author{Shoor}
+\date{\today}
+
+\begin{document}
+
+% \begin{figure}[H]
+%     \centering
+%     \begin{tikzpicture}[
+%         ->,
+%         on grid,
+%         node distance=3cm,
+%         neuron/.append style={
+%             ellipse,
+%             minimum height=9mm,
+%             minimum width=20mm,
+%             font=\footnotesize,
+%         }
+%     ]
+%     \node[neuron=black] (l1-0) at (0, 0) {\(+1\)};
+%     \node[neuron=blue] (l1-1) at (0, -1.2) {\(x^{(i)}_1\)};
+%     \node[neuron=blue] (l1-2) at (0, -2.4) {\(x^{(i)}_2\)};
+%     \node[neuron=black, right=of l1-0] (l2-0) {\(+1\)};
+%     \node[neuron, right=of l1-1] (l2-1) {\(z^{(2)}_1→a^{(2)}_1\)};
+%     \node[neuron, right=of l1-2] (l2-2) {\(z^{(2)}_1→a^{(2)}_1\)};
+
+%     \node[neuron=black, right=of l2-0] (l3-0) {\(+1\)};
+%     \node[neuron, right=of l2-1] (l3-1) {\(z^{(3)}_1→a^{(3)}_1\)};
+%     \node[neuron, right=of l2-2] (l3-2) {\(z^{(3)}_1→a^{(3)}_1\)};
+
+%     \node[neuron, right=of l3-1, pin={[pin edge={black, thin}]right:\(h_Θ(x)\)}] (l4-1) {\(z^{(4)}_1→a^{(4)}_1\)};
+%     \foreach \v[count=\i from 0] in {magenta,red,cyan}{
+%         \draw (l3-\i.east) -> (l4-1.west);
+%         \draw[\v, thick] (l2-\i.east) -> (l3-1.west) node[pos=0.5, font=\footnotesize]{\(Θ^{(2)}_{1\i}\)};
+%         \draw (l2-\i.east) -> (l3-2.west);
+%         \foreach \j in {1,2}
+%             \draw (l1-\i.east) -> (l2-\j.west);
+%     }
+%     \end{tikzpicture}
+% \end{figure}
+
+\maketitle
+\tableofcontents
+\subfile{./content/引言.tex}
+\subfile{./content/单变量线性回归.tex}
+\subfile{./content/线性代数回顾.tex}
+\subfile{./content/Octave教程/index.tex}
+\subfile{./content/多变量线性回归.tex}
+\subfile{./content/正则化.tex}
+\subfile{./content/逻辑回归.tex}
+\part{下一个}
+\subfile{./content/神经网络：表述.tex}
+\subfile{./content/神经网络：学习.tex}
+% \begin{figure}[H]
+%     \centering
+%     \begin{tikzpicture}[on grid, node distance=2.5cm,]
+%         \node[neuron=blue] (l1-0) at (0, 0) {\(1\)};
+%         \node[neuron=blue] (l1-1) at (0, -1) {\(x_1\)};
+%         \node[neuron, right=of l1-1, yshift=0.5, pin={[pin edge={black, thin}]right:\(h_Θ(x)\)}] (l2-1) {};
+%         \foreach \v[count=\i from 0] in {-10,-20}
+%             \draw (l1-\i .east) -> (l2-1.west) node[pos=0.4]{\(\v\)};
+%     \end{tikzpicture}
+% \end{figure}
+\end{document}

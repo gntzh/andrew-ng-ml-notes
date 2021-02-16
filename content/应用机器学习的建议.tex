@@ -1,0 +1,27 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+\chapter{应用机器学习的建议}
+% Advice for Applying Machine Learning
+\section{决定下一步做什么}
+% Deciding What to Try Next
+改进当前模型的可能方向：
+\begin{itemize}
+    \item 获得更多的训练样本
+    \item 尝试减少特征的数量
+    \item 尝试获得更多的特征
+    \item 尝试增加多项式特征
+    \item 尝试减少正则化程度（增大\(λ\)）
+    \item 尝试增加正则化程度（减小\(λ\)）
+\end{itemize}
+但这些方法并不都是有效的，或者有的方法要更加有效，使用机器学习诊断法即可测试算法有效性和性能你，并且获得改进算法的尝试方向。
+
+\section{评估假设}
+% Evaluating a Hypothesis 
+假设函数过拟合检验，需要将数据分成训练集和测试集，一般7:3分。在使用训练集训练模型后，计算对测试集的误差\(J_{test}(Θ)\)，另外误差不一定要使用和训练集误差同样的算法，不如逻辑回归分类的误差就常常使用Misclassification error：\[
+    err(h_θ(x), y) = \begin{cases}
+        1 & if\ h(x)≥0.5\ and\ y=0,\ or\ h(x)＜0.5\ and\ y=1 \\
+        0 & otherwise
+    \end{cases}
+\]
+
+\end{document}
