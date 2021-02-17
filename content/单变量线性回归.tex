@@ -23,7 +23,23 @@
 
 \begin{figure}[H]
     \centering
-    \includegraphics{./img/2.1误差.png}
+    \begin{tikzpicture}[scale=0.8]
+        \begin{axis}[
+            axis lines = left,
+            legend pos=north west,
+        ]
+            \addplot+ [only marks,mark=x,red] coordinates {
+                (1,1) (2,2) (3,3)
+            };
+            \addlegendentry{\(y^{(i)}\)}
+            \addplot[color=black,domain=0:3.2]{0.5*x};
+            \addlegendentry{\(h_θ(x^{(i)})\)}
+            \draw[blue,thick] (1,0.5) -- (1,1);
+            \draw[blue,thick] (2,1) -- (2,2);
+            \draw[blue,thick] (3,1.5) -- (3,3);
+            \draw[decorate,decoration={brace,amplitude=3mm},,red!50] (2,1) -- (2,2) node[midway,left,xshift=-2mm,black!80,font=\footnotesize] {\(h_θ(x^{(i)})- y^{(i)}\)};
+        \end{axis}
+    \end{tikzpicture}    
     \caption{蓝线部分即此模型的误差}
 \end{figure}
 考虑到样本集的误差累计和数学上的含义，采取 \(J(θ_0,θ_1) = \frac{1}{2m}\sum\limits_{i=1}^m ( h_{θ}(x^{(i)})-y^{(i)} )^{2}\)作为Cost Function，算法的目标就是让误差最小，即 \(\underset{θ_0, θ_1}{\text{minimize}} J(θ_0, θ_1)\)。
