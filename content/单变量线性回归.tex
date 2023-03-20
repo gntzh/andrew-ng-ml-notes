@@ -61,7 +61,7 @@
 \section{梯度下降}
 % Gradient descent
 梯度下降背后的思想是：开始时我们随机选择一个参数的组合，计算代价函数，然后我们寻找下一个能让代价函数值下降最多的参数组合。我们持续这么做直到到到一个局部最小值（\textbf{local minimum}），因为我们并没有尝试完所有的参数组合，所以不能确定我们得到的局部最小值是否便是全局最小值（\textbf{global minimum}），选择不同的初始参数组合，可能会找到不同的局部最小值。
-\begin{algorithm}[H]
+\\\begin{algorithm}[H]
     \caption{批量梯度下降（\textbf{batch gradient descent}）}
     init \(θ_0, θ_1← 0\)\;
     \While{not convergence}{
